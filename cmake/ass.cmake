@@ -1,11 +1,14 @@
 cmake_minimum_required(VERSION 3.10)
 # libass ships hand-written asm only for x86/x86_64/aarch64; forcing
-# --enable-asm on armeabi-v7a would fail configure. ARM32 relies on the
-# NEON compiler flags set in the parent CMakeLists instead.
-if(ANDROID_ABI STREQUAL "armeabi-v7a")
-    set(ASS_ASM_ARG "")
-else()
+# --enable-asm on armeabi-v7a would fail configure (ARM32 relies on the
+# NEON compiler flags set in the parent CMakeLists instead). x86/x86_64
+# are left on auto-detect: libass 0.17.x's configure mis-parses nasm 3.x
+# as "too old" and an explicit enable would hard-fail; emulator ABIs are
+# fine with scalar -O3 when the host nasm isn't accepted.
+if(ANDROID_ABI STREQUAL "arm64-v8a")
     set(ASS_ASM_ARG "--enable-asm")
+else()
+    set(ASS_ASM_ARG "")
 endif()
 ExternalProject_Add(ep_ass
     DEPENDS ep_fontconfig ep_harfbuzz ep_freetype ep_fribidi ep_unibreak
