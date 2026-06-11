@@ -44,9 +44,20 @@ set(PLATFORM_COMPILE_ENV_CMDS
         STRIP=${CMAKE_STRIP}
         PKG_CONFIG_PATH=${CMAKE_BINARY_DIR}/lib/pkgconfig)
 
+# CMAKE_C_FLAGS does NOT include the build-type optimization level
+# (CMAKE_C_FLAGS_RELEASE does), and a non-empty CFLAGS also suppresses
+# autoconf's own "-g -O2" default — so without this the whole stack
+# (libass, freetype, harfbuzz, fribidi, fontconfig) compiled at -O0.
+# armeabi-v7a additionally needs an explicit NEON FPU: the ABI doesn't
+# guarantee NEON, so clang defaults to scalar VFP for the v7a triple.
+set(EXTERNAL_OPT_FLAGS "-O3")
+if(ANDROID_ABI STREQUAL "armeabi-v7a")
+    string(APPEND EXTERNAL_OPT_FLAGS " -mfpu=neon")
+endif()
+
 set(PLATFORM_COMPILE_ENV_FLAGS
-        "CFLAGS=${CMAKE_C_FLAGS} -fPIC --target=${CMAKE_C_COMPILER_TARGET}"
-        "CXXFLAGS=${CMAKE_CXX_FLAGS} -fPIC --target=${CMAKE_CXX_COMPILER_TARGET}"
+        "CFLAGS=${CMAKE_C_FLAGS} ${EXTERNAL_OPT_FLAGS} -fPIC --target=${CMAKE_C_COMPILER_TARGET}"
+        "CXXFLAGS=${CMAKE_CXX_FLAGS} ${EXTERNAL_OPT_FLAGS} -fPIC --target=${CMAKE_CXX_COMPILER_TARGET}"
         "LDFLAGS=${CMAKE_SHARED_LINKER_FLAGS} --target=${CMAKE_C_COMPILER_TARGET}"
         "ASFLAGS= -fPIC"
         "YASMFLAGS= -fPIC"
